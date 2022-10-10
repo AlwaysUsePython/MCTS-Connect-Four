@@ -234,3 +234,186 @@ class MCTree:
             return [self.root.children[0].board, 50]
 
 
+
+board = [
+    list("_______"),
+    list("_______"),
+    list("_______"),
+    list("_______"),
+    list("_______"),
+    list("_______"),
+]
+
+# This way we can toggle who's playing first
+turn = "R"
+userPlayer = "Y"
+
+# copying the board to avoid pointer errors
+def getBoardCopy(board):
+    boardCopy = []
+
+    for row in board:
+        boardCopy.append(row.copy())
+
+    return boardCopy
+
+# boolean to detect whether or not moves can be made
+def hasMovesLeft(board):
+    for row in range(6):
+        for col in range(7):
+            if board[row][col] == '_':
+                return True
+    return False
+
+# makes a move given a specified column
+# NOTE: THERE IS NO CODE HERE TO CATCH ILLEGAL MOVES
+def makeMove(currentBoard, col, symbol):
+    firstEmptyRow = 0
+
+    while currentBoard[firstEmptyRow+1][col] == "_":
+        firstEmptyRow += 1
+
+        # make sure we don't go off the board
+        if firstEmptyRow == 5:
+            break
+
+    currentBoard[firstEmptyRow][col] = symbol
+
+    return currentBoard
+
+# Returns a list of the GAME STATES of all the possible next moves
+def getNextMoves(currentBoard, player):
+    nextMoves = []
+
+    for col in range(7):
+        if currentBoard[0][col] == "_":
+            boardCopy = getBoardCopy(currentBoard)
+            boardCopy = makeMove(boardCopy, col, player)
+            nextMoves.append(boardCopy)
+
+    return nextMoves
+
+# Returns a boolean to tell if the player has won
+# NOTE: WILL NOT TELL IF OPPONENT HAS WON, HOWEVER SHOULD NEVER GET TO THAT STATE
+def hasWon(board, player):
+
+    # 1) Check for horizontal connect 4
+    for startRow in range(6):
+        for startCol in range(4):
+            if board[startRow][startCol] == player and board[startRow][startCol + 1] == player and board[startRow][startCol + 2] == player and board[startRow][startCol + 3] == player:
+                return True
+
+    # 2) Check for vertical connect 4
+    for startRow in range(3):
+        for startCol in range(7):
+            if board[startRow][startCol] == player and board[startRow + 1][startCol] == player and board[startRow + 2][startCol] == player and board[startRow + 3][startCol] == player:
+                return True
+
+    # 3) Check for diagonal up connect 4
+    for startRow in range(3, 6):
+        for startCol in range(4):
+            if board[startRow][startCol] == player and board[startRow - 1][startCol + 1] == player and board[startRow - 2][startCol + 2] == player and board[startRow - 3][startCol + 3] == player:
+                return True
+
+    # 4) Check for diagonal down connect 4
+    for startRow in range(3):
+        for startCol in range(4):
+            if board[startRow][startCol] == player and board[startRow + 1][startCol + 1] == player and board[startRow + 2][startCol + 2] == player and board[startRow + 3][startCol + 3] == player:
+                return True
+
+# Takes in the currentPlayer, returns the next player
+def getNextPlayer(currentPlayer):
+    if currentPlayer == 'R':
+        return 'Y'
+
+    return 'R'
+
+# Plays MC Simulation
+# takes in a board and a player, returns a score (positive if the computer won, negative otherwise)
+def simulate(currentBoard, player):
+    currentPlayer = getNextPlayer(player)
+    boardCopy = getBoardCopy(currentBoard)
+
+    if hasWon(currentBoard, userPlayer):
+        return -50
+    elif hasWon(currentBoard, getNextPlayer(userPlayer)):
+        return 50
+
+    simulationMoves = []
+    nextMoves = getNextMoves(boardCopy, currentPlayer)
+
+
+    while nextMoves != []:
+        roll = random.randint(1, len(nextMoves)) - 1
+        boardCopy = nextMoves[roll]
+
+        simulationMoves.append(boardCopy)
+
+        if hasWon(boardCopy, currentPlayer):
+            break
+
+        currentPlayer = getNextPlayer(currentPlayer)
+        nextMoves = getNextMoves(boardCopy, currentPlayer)
+
+    if hasWon(boardCopy, userPlayer):
+        score = -50
+    elif hasWon(boardCopy, getNextPlayer(userPlayer)):
+        score = 50
+    else:
+        score = 0
+
+    return score
+
+# prints the board
+def printBoard(board):
+    print(" 0  1  2  3  4  5  6")
+
+    for row in range(6):
+        for col in range(7):
+            if board[row][col] == "R":
+                print("🔴", end = " ")
+            elif board[row][col] == "Y":
+                print("🟡", end = " ")
+            else:
+                print("__", end = " ")
+        print()
+
+# Takes in input from the player and makes the move on the board
+def getPlayerMove(board, currentPlayer):
+    isMoveValid = False
+    while isMoveValid == False:
+        print('')
+        userMove = input('column? ')
+        userChoice = int(userMove)
+
+        if board[0][userChoice] == '_':
+            isMoveValid = True
+
+    board = makeMove(board, userChoice, currentPlayer)
+    return board
+
+
+printBoard(board)
+
+while hasMovesLeft(board):
+    if turn == userPlayer:
+        board = getPlayerMove(board, turn)
+    else:
+        tree = MCTree(GameState(board, turn))
+        move = tree.makeChoice(2000)
+        board = move[0]
+        if abs(move[1]) < 30:
+            print("expected: tie")
+        elif move[1] < 0:
+            print("expected: Elliot made a coding mistake")
+        else:
+            print("expected: I win!")
+
+    print('')
+    printBoard(board)
+
+    if hasWon(board, turn):
+        print('Player ' + turn + ' has won!')
+        break
+
+    turn = getNextPlayer(turn)

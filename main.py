@@ -375,7 +375,7 @@ def printBoard(board):
             elif board[row][col] == "Y":
                 print("🟡", end = " ")
             else:
-                print("__", end = " ")
+                print("⚪", end = " ")
         print()
 
 # Takes in input from the player and makes the move on the board
@@ -395,25 +395,47 @@ def getPlayerMove(board, currentPlayer):
 
 printBoard(board)
 
-while hasMovesLeft(board):
-    if turn == userPlayer:
-        board = getPlayerMove(board, turn)
-    else:
-        tree = MCTree(GameState(board, turn))
-        move = tree.makeChoice(2000)
-        board = move[0]
-        if abs(move[1]) < 30:
-            print("expected: tie")
-        elif move[1] < 0:
-            print("expected: Elliot made a coding mistake")
+keepPlaying = True
+
+while keepPlaying:
+    while hasMovesLeft(board):
+        if turn == userPlayer:
+            board = getPlayerMove(board, turn)
         else:
-            print("expected: I win!")
+            tree = MCTree(GameState(board, turn))
+            move = tree.makeChoice(5000)
+            board = move[0]
+            if abs(move[1]) < 30:
+                print("evaluation:", move[1])
+            elif move[1] < 0:
+                print("Uh oh... I think I'm gonna lose :(")
+            else:
+                print("GG's. Just concede now.")
 
-    print('')
+        print('')
+        printBoard(board)
+
+        if hasWon(board, turn):
+            print('Player ' + turn + ' has won!')
+            break
+
+        turn = getNextPlayer(turn)
+
+    print()
+    print("new game! switch colors")
+    print()
+    userPlayer = getNextPlayer(userPlayer)
+    turn = "R"
+
+    board = [
+        list("_______"),
+        list("_______"),
+        list("_______"),
+        list("_______"),
+        list("_______"),
+        list("_______"),
+    ]
+
+    gameOver = False
+
     printBoard(board)
-
-    if hasWon(board, turn):
-        print('Player ' + turn + ' has won!')
-        break
-
-    turn = getNextPlayer(turn)
